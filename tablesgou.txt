@@ -1,0 +1,280 @@
+create table public.ugie_commits (
+  id uuid not null default gen_random_uuid (),
+  repo_id uuid not null,
+  sha text not null,
+  message text not null,
+  author_login text null,
+  author_email text null,
+  authored_at timestamp with time zone not null,
+  additions integer not null default 0,
+  deletions integer not null default 0,
+  files_changed integer not null default 0,
+  ingested_at timestamp with time zone not null default now(),
+  source text not null default 'backfill'::text,
+  constraint ugie_commits_pkey primary key (id),
+  constraint ugie_commits_repo_id_sha_key unique (repo_id, sha),
+  constraint ugie_commits_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_commits_repo_id on public.ugie_commits using btree (repo_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_commits_authored_at on public.ugie_commits using btree (authored_at desc) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_commits_author on public.ugie_commits using btree (author_login) TABLESPACE pg_default;
+
+
+
+create table public.ugie_contribution_snapshots (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  repo_id uuid not null,
+  snapshot_date date not null,
+  commit_count integer not null default 0,
+  additions integer not null default 0,
+  deletions integer not null default 0,
+  files_changed integer not null default 0,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint ugie_contribution_snapshots_pkey primary key (id),
+  constraint ugie_contribution_snapshots_user_id_repo_id_snapshot_date_key unique (user_id, repo_id, snapshot_date),
+  constraint ugie_contribution_snapshots_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete CASCADE,
+  constraint ugie_contribution_snapshots_user_id_fkey foreign KEY (user_id) references ugie_users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_snapshots_user_repo on public.ugie_contribution_snapshots using btree (user_id, repo_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_snapshots_date on public.ugie_contribution_snapshots using btree (snapshot_date desc) TABLESPACE pg_default;
+
+create trigger trg_ugie_contribution_snapshots_updated_at BEFORE
+update on ugie_contribution_snapshots for EACH row
+execute FUNCTION ugie_set_updated_at ();
+
+
+
+
+
+
+create table public.ugie_github_identities (
+  id uuid not null default gen_random_uuid (),
+  github_login text not null,
+  github_id bigint null,
+  avatar_url text null,
+  name text null,
+  bio text null,
+  company text null,
+  location text null,
+  site_user_id uuid null,
+  first_seen_at timestamp with time zone not null default now(),
+  last_seen_at timestamp with time zone not null default now(),
+  resolved_at timestamp with time zone null,
+  constraint ugie_github_identities_pkey primary key (id),
+  constraint ugie_github_identities_github_id_key unique (github_id),
+  constraint ugie_github_identities_github_login_key unique (github_login),
+  constraint ugie_github_identities_site_user_id_fkey foreign KEY (site_user_id) references ugie_users (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_github_identities_login on public.ugie_github_identities using btree (github_login) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_github_identities_github_id on public.ugie_github_identities using btree (github_id) TABLESPACE pg_default
+where
+  (github_id is not null);
+
+create index IF not exists idx_ugie_github_identities_site_user on public.ugie_github_identities using btree (site_user_id) TABLESPACE pg_default
+where
+  (site_user_id is not null);
+
+
+
+
+
+
+create table public.ugie_health_ping (
+  id serial not null,
+  constraint ugie_health_ping_pkey primary key (id)
+) TABLESPACE pg_default;
+
+
+
+
+create table public.ugie_issues (
+  id uuid not null default gen_random_uuid (),
+  repo_id uuid not null,
+  number integer not null,
+  title text not null,
+  state text not null,
+  author_login text null,
+  assignee_login text null,
+  comments_count integer not null default 0,
+  created_at timestamp with time zone not null,
+  updated_at timestamp with time zone not null,
+  closed_at timestamp with time zone null,
+  ingested_at timestamp with time zone not null default now(),
+  constraint ugie_issues_pkey primary key (id),
+  constraint ugie_issues_repo_id_number_key unique (repo_id, number),
+  constraint ugie_issues_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_issues_repo_id on public.ugie_issues using btree (repo_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_issues_state on public.ugie_issues using btree (state) TABLESPACE pg_default;
+
+create trigger trg_ugie_issues_updated_at BEFORE
+update on ugie_issues for EACH row
+execute FUNCTION ugie_set_updated_at ();
+
+
+
+
+create table public.ugie_issues (
+  id uuid not null default gen_random_uuid (),
+  repo_id uuid not null,
+  number integer not null,
+  title text not null,
+  state text not null,
+  author_login text null,
+  assignee_login text null,
+  comments_count integer not null default 0,
+  created_at timestamp with time zone not null,
+  updated_at timestamp with time zone not null,
+  closed_at timestamp with time zone null,
+  ingested_at timestamp with time zone not null default now(),
+  constraint ugie_issues_pkey primary key (id),
+  constraint ugie_issues_repo_id_number_key unique (repo_id, number),
+  constraint ugie_issues_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_issues_repo_id on public.ugie_issues using btree (repo_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_issues_state on public.ugie_issues using btree (state) TABLESPACE pg_default;
+
+create trigger trg_ugie_issues_updated_at BEFORE
+update on ugie_issues for EACH row
+execute FUNCTION ugie_set_updated_at ();
+
+
+
+create table public.ugie_repo_collaborators (
+  id uuid not null default gen_random_uuid (),
+  repo_id uuid not null,
+  github_identity_id uuid not null,
+  permission text not null default 'read'::text,
+  role_name text null,
+  fetched_at timestamp with time zone not null default now(),
+  constraint ugie_repo_collaborators_pkey primary key (id),
+  constraint ugie_repo_collaborators_repo_id_github_identity_id_key unique (repo_id, github_identity_id),
+  constraint ugie_repo_collaborators_github_identity_id_fkey foreign KEY (github_identity_id) references ugie_github_identities (id) on delete CASCADE,
+  constraint ugie_repo_collaborators_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_repo_collaborators_repo_id on public.ugie_repo_collaborators using btree (repo_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_repo_collaborators_identity on public.ugie_repo_collaborators using btree (github_identity_id) TABLESPACE pg_default;
+
+
+
+create table public.ugie_repositories (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  github_id bigint not null,
+  owner_login text not null,
+  name text not null,
+  full_name text not null,
+  private boolean not null default false,
+  archived boolean not null default false,
+  default_branch text not null default 'main'::text,
+  language text null,
+  stargazers_count integer not null default 0,
+  forks_count integer not null default 0,
+  open_issues_count integer not null default 0,
+  role text not null default 'collaborator'::text,
+  webhook_id bigint null,
+  webhook_active boolean null default false,
+  last_synced_at timestamp with time zone null,
+  backfill_cursor text null,
+  backfill_complete boolean null default false,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint ugie_repositories_pkey primary key (id),
+  constraint ugie_repositories_user_id_github_id_key unique (user_id, github_id),
+  constraint ugie_repositories_user_id_fkey foreign KEY (user_id) references ugie_users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_repos_user_id on public.ugie_repositories using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_repos_full_name on public.ugie_repositories using btree (full_name) TABLESPACE pg_default;
+
+create trigger trg_ugie_repositories_updated_at BEFORE
+update on ugie_repositories for EACH row
+execute FUNCTION ugie_set_updated_at ();
+
+
+
+
+create table public.ugie_tasks (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null,
+  repo_id uuid null,
+  frontend_project_id text not null,
+  title text not null,
+  assignee text null,
+  priority text not null default 'medium'::text,
+  deadline date null,
+  tags text[] not null default '{}'::text[],
+  status text not null default 'todo'::text,
+  story_points integer not null default 1,
+  created_by text null,
+  source text not null default 'manual'::text,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint ugie_tasks_pkey primary key (id),
+  constraint ugie_tasks_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete set null,
+  constraint ugie_tasks_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+
+create table public.ugie_users (
+  id uuid not null default gen_random_uuid (),
+  github_id bigint not null,
+  login text not null,
+  email text null,
+  avatar_url text null,
+  encrypted_token text null,
+  token_scopes text[] null,
+  token_valid boolean null default true,
+  token_checked_at timestamp with time zone null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint ugie_users_pkey primary key (id),
+  constraint ugie_users_github_id_key unique (github_id)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_users_github_id on public.ugie_users using btree (github_id) TABLESPACE pg_default;
+
+create trigger trg_ugie_users_updated_at BEFORE
+update on ugie_users for EACH row
+execute FUNCTION ugie_set_updated_at ();
+
+
+
+create table public.ugie_webhook_events (
+  id uuid not null default gen_random_uuid (),
+  event_id text not null,
+  event_type text not null,
+  repo_id uuid null,
+  raw_payload jsonb not null,
+  processed boolean not null default false,
+  failed boolean not null default false,
+  retry_count integer not null default 0,
+  received_at timestamp with time zone not null default now(),
+  processed_at timestamp with time zone null,
+  error_message text null,
+  constraint ugie_webhook_events_pkey primary key (id),
+  constraint ugie_webhook_events_event_id_key unique (event_id),
+  constraint ugie_webhook_events_repo_id_fkey foreign KEY (repo_id) references ugie_repositories (id) on delete set null
+) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_webhook_events_event_id on public.ugie_webhook_events using btree (event_id) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_webhook_events_processed on public.ugie_webhook_events using btree (processed) TABLESPACE pg_default;
+
+create index IF not exists idx_ugie_webhook_events_failed on public.ugie_webhook_events using btree (failed) TABLESPACE pg_default;

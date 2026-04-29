@@ -1,0 +1,166 @@
+{
+  "name": "codepolice",
+  "displayName": "CodePolice",
+  "description": "Pre-commit task alignment engine — detects semantic drift before you commit.",
+  "version": "0.1.0",
+  "publisher": "codepolice-dev",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "icon": "resources/icon.png",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codepolice-sidebar",
+          "title": "CodePolice",
+          "icon": "resources/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codepolice-sidebar": [
+        {
+          "type": "webview",
+          "id": "codepolice.sidebarView",
+          "name": "CodePolice",
+          "icon": "resources/sidebar-icon.svg",
+          "contextualTitle": "CodePolice"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codepolice.selectTask",
+        "title": "CodePolice: Select Active Task",
+        "icon": "$(add)"
+      },
+      {
+        "command": "codepolice.switchTask",
+        "title": "CodePolice: Switch Task",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "codepolice.viewReport",
+        "title": "CodePolice: View Alignment Report",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "codepolice.pauseTracking",
+        "title": "CodePolice: Pause Tracking",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "codepolice.resumeTracking",
+        "title": "CodePolice: Resume Tracking",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "codepolice.refreshSidebar",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codepolice.refreshSidebar",
+          "when": "view == codepolice.sidebarView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodePolice",
+      "properties": {
+        "codepolice.debounceSeconds": {
+          "type": "number",
+          "default": 3,
+          "description": "Seconds of inactivity before the batch processor runs."
+        },
+        "codepolice.maxDebounceSeconds": {
+          "type": "number",
+          "default": 15,
+          "description": "Maximum seconds to wait before forcing a batch run, even during continuous saves."
+        },
+        "codepolice.excludedDirs": {
+          "type": "array",
+          "default": [
+            "node_modules",
+            "dist",
+            "build",
+            ".git",
+            "coverage",
+            "out"
+          ],
+          "description": "Directories to ignore when tracking changes."
+        },
+        "codepolice.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose debug logging for file tracking."
+        },
+        "codepolice.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3141",
+          "description": "URL of the CodePolice description server (Ollama + Supabase backend)."
+        },
+        "codepolice.githubUser": {
+          "type": "string",
+          "default": "aryasentry",
+          "description": "Your GitHub username. Stored alongside every change, task, and chunk for collaborative tracking."
+        },
+        "codepolice.alignedThreshold": {
+          "type": "number",
+          "default": 0.75,
+          "description": "Cosine similarity threshold above which code is considered aligned."
+        },
+        "codepolice.mildDriftThreshold": {
+          "type": "number",
+          "default": 0.5,
+          "description": "Cosine similarity threshold below which mild drift is flagged."
+        },
+        "codepolice.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "URL of the local Ollama instance."
+        },
+        "codepolice.summaryModel": {
+          "type": "string",
+          "default": "codellama",
+          "description": "Ollama model used for change summarization."
+        },
+        "codepolice.embeddingModel": {
+          "type": "string",
+          "default": "nomic-embed-text",
+          "description": "Ollama model used for embedding generation."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.2.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "diff": "^5.2.0"
+  }
+}
